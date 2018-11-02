@@ -1,0 +1,679 @@
+from tkinter import *
+from tkinter import filedialog
+from PIL import ImageTk,Image   #PIL has to be installed through pip as "pip install PILLOW"
+import tkinter as tk
+import os
+from screeninfo import get_monitors
+import sqlite3
+import Setup
+import datetime
+
+CWD=os.getcwd()
+CWD=CWD.replace("\\","\\\\")
+File1=open(CWD+"\\\\APPLOG.txt",'a')
+File1.write("\nSESSION START AT:"+str(datetime.datetime.now())+"\n\n")
+
+pmode=0
+CAadhar=""
+
+APP=tk.Tk()
+#Start
+
+logmsg="Program Started"
+print(logmsg);File1.write(logmsg+"\n")
+
+APPwidth=0
+APPheight=0
+res=""
+i=(get_monitors())[0]
+res=str(i)
+APPwidth=res[res.find("(")+1:res.find("x")]
+APPheight=res[res.find("x")+1:res.find("+")]
+APPwidth=int(APPwidth)
+APPheight=int(APPheight)
+res=res[res.find("(")+1:res.find("+")]
+
+logmsg="Current Working Directory is:"+CWD
+print(logmsg);File1.write(logmsg+"\n")
+MainBgImage=ImageTk.PhotoImage((Image.open(CWD+"\\\\Pics\\\\BG1.jpg")).resize((APPwidth,APPheight),Image.ANTIALIAS))
+MainBgImageLabel=Label(APP,image=MainBgImage)
+
+fstyle1="Verdana"
+HUGE_FONT=(fstyle1,30)
+LARGE3_FONT=(fstyle1,24)
+LARGE2_FONT=(fstyle1,18)
+LARGE_FONT=(fstyle1,12)
+NORMAL_FONT=(fstyle1,10)
+SMALL_FONT=(fstyle1,8)
+TINY_FONT=(fstyle1,6)
+
+HomeDict={}
+RegisterDict={}
+LoginDict={}
+ContactUsDict={}
+FixedDict={}
+OthersDict={}
+
+AllDicts={}
+
+def FillAllDicts():
+    global AllDicts
+    AllDicts={}
+    AllDicts['HomeDict']=HomeDict
+    AllDicts['RegisterDict']=RegisterDict
+    AllDicts['LoginDict']=LoginDict
+    AllDicts['ContactUsDict']=ContactUsDict
+    AllDicts['OthersDict']=OthersDict
+    return AllDicts
+
+def FillAllDicts2():
+    global AllDicts
+    AllDicts={}
+    AllDicts['HomeDict']=HomeDict
+    AllDicts['RegisterDict']=RegisterDict
+    AllDicts['LoginDict']=LoginDict
+    AllDicts['ContactUsDict']=ContactUsDict
+    AllDicts['OthersDict']=OthersDict
+    AllDicts['FixedDict']=FixedDict
+    return AllDicts
+
+#Other stuff
+
+APP.title("Automated Passport Verification System")
+APP.state('zoomed')
+MainBgImageLabel.place(x=0,y=0,relwidth=1,relheight=1)
+
+#Fixed Window stuff
+
+def AllClean():
+    TAllDicts={}
+    TAllDicts=FillAllDicts()
+    for i in TAllDicts.keys():
+        for j in TAllDicts[i].keys():
+            TAllDicts[i][j].destroy()
+
+def PresBReact():
+    global pmode,PresB,PresB_text,logmsg
+    if pmode==0:
+        APP.attributes('-fullscreen',True)
+        PresB.place(x=0,y=APPheight-25)
+        PresB["text"]=("Presentation mode:ON")
+        pmode=1
+        logmsg="Presentation mode ENABLED"
+        print(logmsg);File1.write(logmsg+"\n")
+    else:
+        APP.attributes('-fullscreen',False)
+        PresB.place(x=0,y=APPheight-100)
+        PresB["text"]=("Presentation mode:OFF")
+        pmode=0
+        logmsg="Presentation mode DISABLED"
+        print(logmsg);File1.write(logmsg+"\n")
+
+#PresB_text=tk.StringVar()
+PresB=Button(APP,text="Presentation mode:OFF",command=PresBReact)
+FixedDict['PresB']=(PresB)
+PresB.place(x=0,y=APPheight-100)
+
+def Button1React():
+    global logmsg
+    logmsg="Someone Said --->"+HomeDict['TextBox'].get("1.0",END)
+    print(logmsg);File1.write(logmsg+"\n")
+    HomeDict['TextBox'].delete("1.0",END)
+    HomeDict['TextBox'].insert("1.0","Heard it loud and clear....")
+
+def HomeBReact():
+    global logmsg
+    logmsg="Home Button clicked"
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    #Clearing the space for page specific content.
+    Label1=Label(APP,text="Enter your Queries below")
+    HomeDict['Label1']=(Label1)
+    Label1.place(x=APPwidth*.20,y=APPheight*.43)
+    Label1.config(font=HUGE_FONT)
+    TextBox=Text(APP,width=100,height=15)
+    HomeDict['TextBox']=(TextBox)
+    TextBox.place(x=APPwidth*.20,y=APPheight*.5)
+    Button1=Button(APP,text="Submit",command=Button1React)
+    Button1.config(width=20,height=2)
+    HomeDict['Button1']=(Button1)
+    Button1.place(x=APPwidth*.8,y=APPheight*.55)
+
+HomeB=Button(APP,text="Home",command=HomeBReact)
+FixedDict['HomeB']=(HomeB)
+HomeB.config(height=2,width=15,font=LARGE_FONT)
+HomeB.place(x=150,y=50)
+
+def RegisterSubmitBReactCheck():
+    global RegisterDict,CWD
+    connection=sqlite3.connect("APVS.db")
+    cursor1=connection.cursor()
+    if len(RegisterDict['Entry1'].get())!=12:
+        return "Aadhar no Invalid:Typo."
+    if len(RegisterDict['Entry3'].get())!=10:
+        return "Phone no Invalid:Typo."
+    cursor1.execute("SELECT COUNT(Aadhar_no) FROM User_Registration_details WHERE Aadhar_no={}".format(RegisterDict['Entry1'].get()))
+    if cursor1.fetchone()[0] !=0:
+        return "Aadhar no Invalid:Already in use."
+    if RegisterDict['Entry2'].get()=="":
+        return "E-MAIL ID Invalid:Empty."
+    cursor1.execute("SELECT COUNT(EMail_ID) FROM User_Registration_details WHERE EMail_ID={}".format(RegisterDict['Entry2'].get()))
+    if cursor1.fetchone()[0] !=0:
+        return "E-MAIL ID Invalid:Already in use."
+    cursor1.execute("SELECT COUNT(Phone_no) FROM User_Registration_details WHERE Phone_no={}".format(RegisterDict['Entry3'].get()))
+    if cursor1.fetchone()[0] !=0:
+        return "Phone no Invalid:Already in use."
+    if RegisterDict['Entry4'].get() != RegisterDict['Entry5'].get() or RegisterDict['Entry4'].get()=="":
+        return "Password Invalid:Inconsistent/Empty."
+    
+    File2=open(CWD+"\\\\RegisLOG.txt","r+")
+    templine=File2.readline()
+    NofRegs=int(templine[20:templine.find("\n")])+1
+    File2.seek(0,0)
+    File2.write("No.of Registrations:"+str(NofRegs)+"\n")
+    st=[NofRegs,RegisterDict['Entry1'].get(),RegisterDict['Entry2'].get(),RegisterDict['Entry3'].get(),RegisterDict['Entry4'].get(),"Not Applied"]
+    cursor1.execute("INSERT INTO User_Registration_details VALUES(?,?,?,?,?,?)",st)
+    connection.commit()
+    cursor1.close()
+    connection.close()
+    File2.close()
+    return "Perfect!"
+
+def RegisterSubmitBReact():
+    global logmsg
+    logmsg="Register Submit Button clicked"
+    print(logmsg);File1.write(logmsg+"\n")
+    global RegisterDict
+    result=RegisterSubmitBReactCheck()
+    AllClean()
+    if(result=="Perfect!"):
+        Label10=Label(APP,text="REGISTRATION SUCCESSFULL!")
+        OthersDict['Label10']=(Label10)
+        Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+        Label10.config(font=HUGE_FONT)
+    else:
+        Label10=Label(APP,text="REGISTRATION UNSUCCESSFULL\n\n"+result)
+        OthersDict['Label10']=(Label10)
+        Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+        Label10.config(font=LARGE_FONT)
+
+def RegisterBReact():
+    global logmsg
+    logmsg="Register Button clicked"
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    #Clearing the space for page specific content.
+    Label1=Label(APP,text="Fill the following fields")
+    RegisterDict['Label1']=(Label1)
+    Label1.place(x=APPwidth*.5-150,y=150)
+    Label1.config(font=LARGE2_FONT)
+
+    sx=250;sy=250;sx2=800
+
+    Label2=Label(APP,text="Aadhar No:",width=17)
+    RegisterDict['Label2']=(Label2)
+    Label2.place(x=sx,y=sy)
+    Label2.config(font=NORMAL_FONT)
+    Entry1=Entry(APP,width=30)
+    RegisterDict['Entry1']=(Entry1)
+    Entry1.place(x=sx+170,y=sy)
+    
+    Label3=Label(APP,text="E-mail ID:",width=17)
+    RegisterDict['Label3']=(Label3)
+    Label3.place(x=sx,y=350)
+    Label3.config(font=NORMAL_FONT)
+    Entry2=Entry(APP,width=30)
+    RegisterDict['Entry2']=(Entry2)
+    Entry2.place(x=sx+170,y=sy+100)
+    
+    Label4=Label(APP,text="Phone number:",width=17)
+    RegisterDict['Label4']=(Label4)
+    Label4.place(x=sx,y=450)
+    Label4.config(font=NORMAL_FONT)
+    Entry3=Entry(APP,width=30)
+    RegisterDict['Entry3']=(Entry3)
+    Entry3.place(x=sx+170,y=sy+200)
+    
+    Label5=Label(APP,text="Password:",width=17)
+    RegisterDict['Label5']=(Label5)
+    Label5.place(x=sx2,y=250)
+    Label5.config(font=NORMAL_FONT)
+    Entry4=Entry(APP,width=30)
+    RegisterDict['Entry4']=(Entry4)
+    Entry4.place(x=sx2+170,y=sy)
+    
+    Label6=Label(APP,text="Confirm Password:",width=17)
+    RegisterDict['Label6']=(Label6)
+    Label6.place(x=sx2,y=350)
+    Label6.config(font=NORMAL_FONT)
+    Entry5=Entry(APP,width=30)
+    RegisterDict['Entry5']=(Entry5)
+    Entry5.place(x=sx2+170,y=sy+100)
+
+    RegisterSubmitB=Button(APP,text="SUBMIT",command=RegisterSubmitBReact)
+    RegisterDict['RegisterSubmitB']=(RegisterSubmitB)
+    RegisterSubmitB.config(height=2,width=15,font=LARGE_FONT)
+    RegisterSubmitB.place(x=850,y=450)
+    
+
+RegisterB=Button(APP,text="Register",command=RegisterBReact)
+FixedDict['RegisterB']=(RegisterB)
+RegisterB.config(height=2,width=15,font=LARGE_FONT)
+RegisterB.place(x=450,y=50)
+
+cstatus=""
+
+def FileSubmitBReact():
+    global UploadFile,OthersDict
+    UploadFile=filedialog.askopenfilename(initialdir="C:\\",title="Select file")
+    print("User Selected ->"+UploadFile+" this file to upload.")
+    LoginDict['Entry8'].insert(0,UploadFile)
+
+def Error(msg):
+    global logmsg
+    logmsg="Error ->"+msg
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    Label10=Label(APP,text="Error:"+msg)
+    OthersDict['Label10']=(Label10)
+    Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+    Label10.config(font=HUGE_FONT)
+
+def LoginB2Error(msg):
+    global logmsg
+    logmsg="Login Failed ->"+msg
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    Label10=Label(APP,text="Login Failed:"+msg)
+    OthersDict['Label10']=(Label10)
+    Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+    Label10.config(font=HUGE_FONT)
+
+def StatusError(msg):
+    global logmsg
+    logmsg="Status Error ->"+msg
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    Label10=Label(APP,text=msg)
+    OthersDict['Label10']=(Label10)
+    Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+    Label10.config(font=HUGE_FONT)
+
+def ApplyBReact():
+    global logmsg,CAadhar,AllDicts
+    connection=sqlite3.connect("APVS.db")
+    cursor1=connection.cursor()
+    cursor1.execute("SELECT * FROM User_Registration_details WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    cstatus=checkrow[0][5]
+    if cstatus!="Not Applied":
+        StatusError("Already Applied")
+        return
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Name=checkrow[0][1]
+    cursor1.execute("UPDATE User_Registration_details SET Status='Applied' WHERE Aadhar_no={}".format(CAadhar))
+    connection.commit()
+    cursor1.close()
+    connection.close()
+    logmsg=Name+" Applied!"
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    Label10=Label(APP,text="Application Sent!")
+    OthersDict['Label10']=(Label10)
+    Label10.place(x=APPwidth*.5-300,y=APPheight*.38)
+    Label10.config(font=HUGE_FONT)
+
+def SaveBReact():
+    connection=sqlite3.connect("APVS.db")
+    cursor1=connection.cursor()
+    tl=['Entry2','Entry3','Entry4','Entry5','Entry6','Entry7']
+    for i in tl:
+        if len(LoginDict[i].get())==0:
+            Error("Invalid Editing")
+            return
+    tlis=[LoginDict['Entry2'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA SET Name=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    tlis=[LoginDict['Entry3'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA  SET Father_Name=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    tlis=[LoginDict['Entry4'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA  SET DOB=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    tlis=[LoginDict['Entry5'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA  SET Gender=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    tlis=[LoginDict['Entry6'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA  SET Address=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    tlis=[LoginDict['Entry7'].get(),CAadhar]
+    cursor1.execute("UPDATE GOVT_DATA  SET EMail_ID=? WHERE Aadhar_no=?",tlis)
+    connection.commit()
+    cursor1.close()
+    connection.close()
+
+def EditBReact():
+    global logmsg,UploadFile,cstatus,CAadhar
+    connection=sqlite3.connect("APVS.db")
+    cursor1=connection.cursor()
+    AllClean()
+    Label1=Label(APP,text="These are your details accessed from Government Databases")
+    LoginDict['Label1']=(Label1)
+    Label1.place(x=APPwidth*.15,y=120)
+    Label1.config(font=LARGE2_FONT)
+
+    StatusLabel=Label(APP,text="STATUS->"+cstatus)
+    LoginDict['StatusLabel']=(StatusLabel)
+    StatusLabel.place(x=APPwidth*.7,y=120)
+    StatusLabel.config(font=LARGE2_FONT)
+
+    sx=250;sy=250;sx2=800
+
+    Label2=Label(APP,text="Aadhar No:",width=17)
+    LoginDict['Label2']=(Label2)
+    Label2.place(x=sx,y=sy)
+    Label2.config(font=NORMAL_FONT)
+    Entry1=Entry(APP,width=30)
+    LoginDict['Entry1']=(Entry1)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Aa=checkrow[0][0]
+    Entry1.insert(0,Aa)
+    Entry1.place(x=sx+170,y=sy)
+    
+    Label3=Label(APP,text="Name:",width=17)
+    LoginDict['Label3']=(Label3)
+    Label3.place(x=sx,y=350)
+    Label3.config(font=NORMAL_FONT)
+    Entry2=Entry(APP,width=30)
+    LoginDict['Entry2']=(Entry2)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Name=checkrow[0][1]
+    Entry2.insert(0,Name)
+    Entry2.place(x=sx+170,y=sy+100)
+    
+    Label4=Label(APP,text="Father Name:",width=17)
+    LoginDict['Label4']=(Label4)
+    Label4.place(x=sx,y=450)
+    Label4.config(font=NORMAL_FONT)
+    Entry3=Entry(APP,width=30)
+    LoginDict['Entry3']=(Entry3)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    FName=checkrow[0][2]
+    Entry3.insert(0,FName)
+    Entry3.place(x=sx+170,y=sy+200)
+    
+    Label5=Label(APP,text="Date of Birth:",width=17)
+    LoginDict['Label5']=(Label5)
+    Label5.place(x=sx,y=550)
+    Label5.config(font=NORMAL_FONT)
+    Entry4=Entry(APP,width=30)
+    LoginDict['Entry4']=(Entry4)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    DOB=checkrow[0][3]
+    Entry4.insert(0,DOB)
+    Entry4.place(x=sx+170,y=sy+300)
+    
+    Label6=Label(APP,text="Gender:",width=17)
+    LoginDict['Label6']=(Label6)
+    Label6.place(x=sx2,y=250)
+    Label6.config(font=NORMAL_FONT)
+    Entry5=Entry(APP,width=30)
+    LoginDict['Entry5']=(Entry5)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    G=checkrow[0][4]
+    Entry5.insert(0,G)
+    Entry5.place(x=sx2+170,y=sy)
+
+    Label7=Label(APP,text="Address:",width=17)
+    LoginDict['Label7']=(Label7)
+    Label7.place(x=sx2,y=350)
+    Label7.config(font=NORMAL_FONT)
+    Entry6=Entry(APP,width=30)
+    LoginDict['Entry6']=(Entry6)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Add=checkrow[0][5]
+    Entry6.insert(0,Add)
+    Entry6.place(x=sx2+170,y=sy+100)
+    
+    Label8=Label(APP,text="E-Mail:",width=17)
+    LoginDict['Label8']=(Label8)
+    Label8.place(x=sx2,y=450)
+    Label8.config(font=NORMAL_FONT)
+    Entry7=Entry(APP,width=30)
+    LoginDict['Entry7']=(Entry7)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    EM=checkrow[0][6]
+    Entry7.insert(0,EM)
+    Entry7.place(x=sx2+170,y=sy+200)
+
+    FileSubmitB=Button(APP,text="Upload CurrentBill Picture",command=FileSubmitBReact)
+    LoginDict['FileSubmitB']=(FileSubmitB)
+    FileSubmitB.config(font=LARGE_FONT)
+    FileSubmitB.place(x=sx2,y=550)
+    Entry8=Entry(APP,width=40)
+    LoginDict['Entry8']=(Entry8)
+    Entry8.place(x=sx2+270,y=sy+300)
+
+    SaveB=Button(APP,text="Save",command=SaveBReact)
+    LoginDict['SaveB']=(SaveB)
+    SaveB.config(width=10,font=LARGE_FONT)
+    SaveB.place(x=600,y=630)
+
+    ApplyB=Button(APP,text="Apply",command=ApplyBReact)
+    LoginDict['ApplyB']=(ApplyB)
+    ApplyB.config(width=10,font=LARGE_FONT)
+    ApplyB.place(x=800,y=630)
+
+    cursor1.close()
+    connection.close()
+    
+def LoginB2React():
+    global logmsg,UploadFile,cstatus,CAadhar
+    logmsg="Login attempted"
+    print(logmsg);File1.write(logmsg+"\n")
+    CAadhar=LoginDict['Entry1'].get()
+    if LoginDict['Entry1'].get()=="" or LoginDict['Entry2'].get()=="" or len(LoginDict['Entry1'].get())!=12:
+        LoginB2Error("Invalid Entries")
+        return
+    connection=sqlite3.connect("APVS.db")
+    cursor1=connection.cursor()
+    cursor1.execute("SELECT * FROM User_Registration_details WHERE Aadhar_no={}".format(LoginDict['Entry1'].get()))
+    checkrow=cursor1.fetchall()
+    if checkrow==None:
+        LoginB2Error("Aadhar not registered.")
+        return
+    if len(checkrow)==0:
+        LoginB2Error("Aadhar not registered.")
+        return
+    if checkrow[0][4] != (LoginDict['Entry2'].get()):
+        LoginB2Error("Password Incorrect.")
+        return
+    cstatus=checkrow[0][5]
+    AllClean()
+    Label1=Label(APP,text="These are your details accessed from Government Databases")
+    LoginDict['Label1']=(Label1)
+    Label1.place(x=APPwidth*.15,y=120)
+    Label1.config(font=LARGE2_FONT)
+
+    StatusLabel=Label(APP,text="STATUS->"+cstatus)
+    LoginDict['StatusLabel']=(StatusLabel)
+    StatusLabel.place(x=APPwidth*.7,y=120)
+    StatusLabel.config(font=LARGE2_FONT)
+
+    sx=250;sy=250;sx2=800
+
+    Label2=Label(APP,text="Aadhar No:",width=17)
+    LoginDict['Label2']=(Label2)
+    Label2.place(x=sx,y=sy)
+    Label2.config(font=NORMAL_FONT)
+    Entry1=Entry(APP,width=30)
+    LoginDict['Entry1']=(Entry1)
+    Entry1.place(x=sx+170,y=sy)
+    Entry1.insert(0,CAadhar)
+    Entry1.config(state=DISABLED)
+    
+    Label3=Label(APP,text="Name:",width=17)
+    LoginDict['Label3']=(Label3)
+    Label3.place(x=sx,y=350)
+    Label3.config(font=NORMAL_FONT)
+    Entry2=Entry(APP,width=30)
+    LoginDict['Entry2']=(Entry2)
+    Entry2.place(x=sx+170,y=sy+100)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Name=checkrow[0][1]
+    Entry2.insert(0,Name)
+    Entry2.config(state=DISABLED)
+    
+    Label4=Label(APP,text="Father Name:",width=17)
+    LoginDict['Label4']=(Label4)
+    Label4.place(x=sx,y=450)
+    Label4.config(font=NORMAL_FONT)
+    Entry3=Entry(APP,width=30)
+    LoginDict['Entry3']=(Entry3)
+    Entry3.place(x=sx+170,y=sy+200)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    FName=checkrow[0][2]
+    Entry3.insert(0,FName)
+    Entry3.config(state=DISABLED)
+    
+    Label5=Label(APP,text="Date of Birth:",width=17)
+    LoginDict['Label5']=(Label5)
+    Label5.place(x=sx,y=550)
+    Label5.config(font=NORMAL_FONT)
+    Entry4=Entry(APP,width=30)
+    LoginDict['Entry4']=(Entry4)
+    Entry4.place(x=sx+170,y=sy+300)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    DOB=checkrow[0][3]
+    Entry4.insert(0,DOB)
+    Entry4.config(state=DISABLED)
+    
+    Label6=Label(APP,text="Gender:",width=17)
+    LoginDict['Label6']=(Label6)
+    Label6.place(x=sx2,y=250)
+    Label6.config(font=NORMAL_FONT)
+    Entry5=Entry(APP,width=30)
+    LoginDict['Entry5']=(Entry5)
+    Entry5.place(x=sx2+170,y=sy)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    G=checkrow[0][4]
+    Entry5.insert(0,G)
+    Entry5.config(state=DISABLED)
+
+    Label7=Label(APP,text="Address:",width=17)
+    LoginDict['Label7']=(Label7)
+    Label7.place(x=sx2,y=350)
+    Label7.config(font=NORMAL_FONT)
+    Entry6=Entry(APP,width=30)
+    LoginDict['Entry6']=(Entry6)
+    Entry6.place(x=sx2+170,y=sy+100)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    Add=checkrow[0][5]
+    Entry6.insert(0,Add)
+    Entry6.config(state=DISABLED)
+    
+    Label8=Label(APP,text="E-Mail:",width=17)
+    LoginDict['Label8']=(Label8)
+    Label8.place(x=sx2,y=450)
+    Label8.config(font=NORMAL_FONT)
+    Entry7=Entry(APP,width=30)
+    LoginDict['Entry7']=(Entry7)
+    Entry7.place(x=sx2+170,y=sy+200)
+    cursor1.execute("SELECT * FROM GOVT_DATA WHERE Aadhar_no={}".format(CAadhar))
+    checkrow=cursor1.fetchall()
+    E=checkrow[0][6]
+    Entry7.insert(0,E)
+    Entry7.config(state=DISABLED)
+
+    if(cstatus!="Applied"):
+        FileSubmitB=Button(APP,text="Upload CurrentBill Picture",command=FileSubmitBReact)
+        LoginDict['FileSubmitB']=(FileSubmitB)
+        FileSubmitB.config(font=LARGE_FONT)
+        FileSubmitB.place(x=sx2,y=550)
+        Entry8=Entry(APP,width=40)
+        LoginDict['Entry8']=(Entry8)
+        Entry8.place(x=sx2+270,y=sy+300)
+
+        EditB=Button(APP,text="Edit",command=EditBReact)
+        LoginDict['EditB']=(EditB)
+        EditB.config(width=10,font=LARGE_FONT)
+        EditB.place(x=600,y=630)
+
+        ApplyB=Button(APP,text="Apply",command=ApplyBReact)
+        LoginDict['ApplyB']=(ApplyB)
+        ApplyB.config(width=10,font=LARGE_FONT)
+        ApplyB.place(x=800,y=630)
+
+    cursor1.close()
+    connection.close()
+
+def LoginBReact():
+    global logmsg
+    logmsg="Login Button clicked"
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    #Clearing the space for page specific content.
+
+    sx=APPwidth*.3;sy=APPheight*.35
+
+    Label1=Label(APP,text="Aadhar No:",width=17)
+    LoginDict['Label2']=(Label1)
+    Label1.place(x=sx,y=sy-10)
+    Label1.config(height=2,font=NORMAL_FONT)
+    Entry1=Entry(APP,width=30)
+    LoginDict['Entry1']=(Entry1)
+    Entry1.place(x=sx+200,y=sy)
+    
+    Label2=Label(APP,text="Password:",width=17)
+    LoginDict['Label3']=(Label2)
+    Label2.place(x=sx,y=sy+100-10)
+    Label2.config(height=2,font=NORMAL_FONT)
+    Entry2=Entry(APP,width=30)
+    LoginDict['Entry2']=(Entry2)
+    Entry2.place(x=sx+200,y=sy+100)
+            
+    LoginB2=Button(APP,text="Login",command=LoginB2React)
+    LoginDict['LoginB2']=(LoginB2)
+    LoginB2.config(width=10,font=LARGE_FONT)
+    LoginB2.place(x=APPwidth*.45,y=APPheight*.55)
+
+LoginB=Button(APP,text="Login",command=LoginBReact)
+FixedDict['LoginB']=(LoginB)
+LoginB.config(height=2,width=15,font=LARGE_FONT)
+LoginB.place(x=750,y=50)
+
+def ContactUsBReact():
+    global logmsg,APPwidth,APPheight
+    logmsg="ContactUs Button clicked"
+    print(logmsg);File1.write(logmsg+"\n")
+    AllClean()
+    #Clearing the space for page specific content.
+    Label1=Label(APP,text="Contact Information:\nHelpLine:040-16698758\nHead Office:73,RedCross Road Shivaji Nagar\nSecunderabad Telangana 500003\n040-55685988")
+    ContactUsDict['Label1']=(Label1)
+    Label1.place(x=APPwidth*.25,y=APPheight*.3)
+    Label1.config(height=15,width=100,font=NORMAL_FONT)
+
+ContactUsB=Button(APP,text="ContactUs",command=ContactUsBReact)
+FixedDict['ContactUsB']=(ContactUsB)
+ContactUsB.config(height=2,width=15,font=LARGE_FONT)
+ContactUsB.place(x=1050,y=50)
+
+HomeBReact()
+
+#End
+APP.mainloop()
+File1.write("\n\nSESSION END AT:"+str(datetime.datetime.now()))
+File1.close()
