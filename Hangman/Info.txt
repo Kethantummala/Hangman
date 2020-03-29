@@ -1,0 +1,31 @@
+*****Hangman Game Made by KETHAN TUMMALA
+
+----------------------------------Making Executable with pyinstaller----------------------------------
+
+-> Install pyinstaller
+-> Run "pyinstaller --onefile -w Hangman.py" from the the directory where Hangman.py is present. 
+
+*NOTE: pyinstaller has some bug so executable not working properly, if you have python installed, you could play by running "Hangman.cpython-37.pyc" file in "__pycache__" folder.
+
+----------------------------------Making Executable with cx_Freeze-----------------------------------
+
+-> install cx_Freeze (pip install cx_Freeze)
+-> python cx_Freeze_execMaker.py build
+
+
+
+
+*************************
+Huge Appreciation to SentDex(Youtube)
+
+-> I was to learn a lot from your videos and i have huge respect to the work you did and are doing.
+
+*************************
+
+
+
+
+
+
+*****Hangman Game Made by KETHAN TUMMALA
+E-Mail: tummala.kethan@gmail.com

@@ -1,4 +1,4 @@
-#Hangman Game
+#Hangman Game made by KETHAN TUMMALA
 
 #Requirements
 """
@@ -458,3 +458,4 @@ def gameLoop():
     gameExit()
 
 gameLoop()
+#Hangman Game made by KETHAN TUMMALA
