@@ -246,18 +246,18 @@ def gameOver():
 def Play():
     words=["ABANDON","BOUNDARY","CENTURY","DAY","EDGE"]
     answer=random.choice(words)
+    Filled=[False]*8
     la=len(answer)
-    no_hints=int(la/3)
-    hint_inds=[]
-    for z in range(no_hints):
+    no_hints=la//3
+    Correct=no_hints
+    while no_hints:
         x=random.randint(0,la-1)
-        if x not in hint_inds:
-            hint_inds.append(x)
+        if not Filled[x]:
+            Filled[x]=True
+            no_hints-=1
     Butts=[]
     Blanks=[]
-    Filled=[False]*8
     Wrongs=0
-    Correct=no_hints
     Playing=True
 
     a_n=1#Alphabet_Number
@@ -307,7 +307,9 @@ def Play():
                             if B.text in answer:
                                 B.color=Green
                                 l_ind=answer.index(B.text)
+                                
                                 for ind in find(answer,answer[l_ind]):
+                                    print(ind,Filled)
                                     if Filled[ind]==False:
                                         Filled[ind]=True
                                         Correct+=1
@@ -355,13 +357,6 @@ def Play():
                 Filled[ind]=True
                 ind-=1
                 unused-=1
-                
-        #Filling a couple of missing blanks
-        for ind in hint_inds:
-            if Filled[ind]==False:
-                filll = font_Answer_Letters.render(answer[ind], True, Black)
-                gameDisplay.blit(filll, (Blanks[ind].x + (Blanks[ind].width/2 - filll.get_width()/2), Blanks[ind].y + (Blanks[ind].height/2 - filll.get_height())))
-                Filled[ind]=True
                 
         #Filling user answer
         for lpos in range(len(answer)):
